@@ -2,6 +2,7 @@ import * as Discord from "discord.js";
 import * as https from "https";
 import * as fs from "fs";
 import fetch from "node-fetch";
+import { URL } from "url";
 
 const settings = JSON.parse(fs.readFileSync("./settings.json").toString());
 const client = new Discord.Client();
@@ -37,11 +38,41 @@ async function update() {
 		return;
 	}
 
+	// refresh token to cause it to update and return us a new token
+	// without the need for a server.
+	// this is totally how oauth2 is designed to be used
+	const url = new URL("https://api.patreon.com/oauth2/token");
+	url.searchParams.set("grant_type", "refresh_token");
+	url.searchParams.set("refresh_token", settings.patreonRefreshToken);
+	url.searchParams.set("client_id", settings.patreonClientId);
+	url.searchParams.set("client_secret", settings.patreonClientSecret);
+
+	const res = await fetch(url.toString(), { method: "POST" });
+	if (!res.ok) {
+		throw new Error(`Error refreshing oauth keys \`${res.status}\``);
+	}
+	const tokenInfo = await res.json();
+	// update settings
+	settings.patreonAccessToken = tokenInfo.access_token;
+	settings.patreonRefreshToken = tokenInfo.refresh_token;
+	await new Promise((resolve, reject) => {
+		fs.writeFile("./settings.json", JSON.stringify(settings, undefined, 4), err => {
+			if (err) {
+				reject(err);
+			} else {
+				resolve();
+			}
+		})
+	});
+
 	const patreonRequest = await fetch("https://api.patreon.com/oauth2/api/current_user/campaigns?include=pledges", {
 		headers: {
 			"Authorization": `Bearer ${settings.patreonAccessToken}`
 		}
 	});
+	if (!patreonRequest.ok) {
+		throw new Error(`Request failed, return code \`${patreonRequest.status}\``);
+	}
 	const patreonData = await patreonRequest.json();
 	const patreonBackersRaw = patreonData.included.filter((x: any) => x.type == "user") as any[];
 	const patreonBackers = patreonBackersRaw
@@ -74,11 +105,7 @@ client.on("ready", () => {
 	console.log("Discord ready");
 
 	function dontCareErrorWrapper() {
-		try {
-			update();
-		} catch (err) {
-			console.error(err);
-		}
+		update().catch(console.error);
 	}
 
 	dontCareErrorWrapper();

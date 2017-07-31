@@ -1,8 +1,10 @@
 {
-	"loginToken": "",
-	"guildId": "",
-	"whaleRoleId": "",
-	"twitchSubRoleId": "",
-
-	"patreonAccessToken": ""
+    "loginToken": "",
+    "guildId": "",
+    "whaleRoleId": "",
+    "twitchSubRoleId": "",
+    "patreonClientId": "",
+    "patreonClientSecret": "",
+    "patreonAccessToken": "",
+    "patreonRefreshToken": ""
 }
