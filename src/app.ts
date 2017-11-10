@@ -83,7 +83,7 @@ async function update() {
 
 	const updatedWhales = new Map<string, Discord.GuildMember>([
 		...Array.from(twitchSubRole.members),
-		...Array.from(patronBackersMap)
+		...(Array.from(patronBackersMap).filter(v => v[1] != undefined))
 	]);
 	const updatedWhalesArray = Array.from(updatedWhales.values());
 
@@ -99,6 +99,8 @@ async function update() {
 		console.log(`Removing "${w.displayName}" from whales`);
 		await w.removeRole(whaleRole);
 	}
+
+	console.log("Tick complete");
 }
 
 client.on("ready", () => {
@@ -109,7 +111,7 @@ client.on("ready", () => {
 	}
 
 	dontCareErrorWrapper();
-	setInterval(dontCareErrorWrapper, 5 * 60 * 1000); // 5 minutes
+	setInterval(dontCareErrorWrapper, 30 * 60 * 1000); // 30 minutes
 });
 
 client.login(settings.loginToken);
