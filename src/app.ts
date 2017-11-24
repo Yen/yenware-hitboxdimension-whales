@@ -80,11 +80,16 @@ async function update() {
 		.filter(x => x != undefined)
 		.map(x => x.user_id) as string[];
 	const patronBackersMap = new Map(patreonBackers.map(b => [b, guild.members.get(b)!] as [string, Discord.GuildMember]));
+	
+	const overrideRole = guild.roles.get(settings.overrideRoleId);
+	const overrideRoleMembers = overrideRole ? overrideRole.members : new Discord.Collection<string, Discord.GuildMember>();
 
 	const updatedWhales = new Map<string, Discord.GuildMember>([
 		...Array.from(twitchSubRole.members),
-		...(Array.from(patronBackersMap).filter(v => v[1] != undefined))
+		...(Array.from(patronBackersMap).filter(v => v[1] != undefined)),
+		...Array.from(overrideRoleMembers)
 	]);
+
 	const updatedWhalesArray = Array.from(updatedWhales.values());
 
 	const whalesToAdd = updatedWhalesArray.filter(x => !x.roles.has(whaleRole.id));
