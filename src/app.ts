@@ -65,22 +65,31 @@ async function update() {
 		})
 	});
 
-	const patreonRequest = await fetch("https://api.patreon.com/oauth2/api/current_user/campaigns?include=pledges", {
-		headers: {
-			"Authorization": `Bearer ${settings.patreonAccessToken}`
+	const backers = new Set<string>();
+	let nextUrl = `https://www.patreon.com/api/oauth2/api/campaigns/${settings.patreonCampaignId}/pledges?include=patron.null`;
+	while (nextUrl != undefined) {
+		const patreonRequest = await fetch(nextUrl, {
+			headers: {
+				"Authorization": `Bearer ${settings.patreonAccessToken}`
+			}
+		});
+		if (!patreonRequest.ok) {
+			throw new Error(`Request failed, return code \`${patreonRequest.status}\``);
 		}
-	});
-	if (!patreonRequest.ok) {
-		throw new Error(`Request failed, return code \`${patreonRequest.status}\``);
+		const patreonData = await patreonRequest.json();
+		const patreonBackersRaw = patreonData.included.filter((x: any) => x.type == "user") as any[];
+		const patreonBackers = patreonBackersRaw
+			.map(x => x.attributes.social_connections.discord)
+			.filter(x => x != undefined)
+			.map(x => x.user_id) as string[];
+
+		for (const b of patreonBackers)
+			backers.add(b);
+
+		nextUrl = patreonData.links["next"];
 	}
-	const patreonData = await patreonRequest.json();
-	const patreonBackersRaw = patreonData.included.filter((x: any) => x.type == "user") as any[];
-	const patreonBackers = patreonBackersRaw
-		.map(x => x.attributes.social_connections.discord)
-		.filter(x => x != undefined)
-		.map(x => x.user_id) as string[];
-	const patronBackersMap = new Map(patreonBackers.map(b => [b, guild.members.get(b)!] as [string, Discord.GuildMember]));
-	
+	const patronBackersMap = new Map([...backers].map(b => [b, guild.members.get(b)!] as [string, Discord.GuildMember]));
+
 	const overrideRole = guild.roles.get(settings.overrideRoleId);
 	const overrideRoleMembers = overrideRole ? overrideRole.members : new Discord.Collection<string, Discord.GuildMember>();
 

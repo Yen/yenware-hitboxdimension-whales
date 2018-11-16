@@ -6,5 +6,6 @@
     "patreonClientId": "",
     "patreonClientSecret": "",
     "patreonAccessToken": "",
-    "patreonRefreshToken": ""
+    "patreonRefreshToken": "",
+    "patreonCampaignId": 0
 }
