@@ -1,7 +1,7 @@
 import * as Discord from "discord.js";
 import * as https from "https";
 import * as fs from "fs";
-import * as fetch from "node-fetch";
+import fetch from "node-fetch";
 import { URL } from "url";
 
 const settings = JSON.parse(fs.readFileSync("./settings.json").toString());
